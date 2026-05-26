@@ -44,7 +44,7 @@ mtcars-fastapi-api/
 
 ```bash
 # clone the repo
-git clone https://github.com/<your-username>/mtcars-fastapi-api.git
+git clone https://github.com/ArcherX0X/mtcars-fastapi-api.git
 cd mtcars-fastapi-api
 
 # create virtual environment and install dependencies
@@ -113,22 +113,31 @@ curl -X POST http://localhost:8080/predict \
 ```bash
 # authenticate
 gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
+gcloud config set project mtcars-fastapi-zach
+gcloud auth configure-docker us-central1-docker.pkg.dev
 
-# tag and push image
-podman tag mtcars-fastapi gcr.io/YOUR_PROJECT_ID/mtcars-fastapi:latest
-podman push gcr.io/YOUR_PROJECT_ID/mtcars-fastapi:latest
+# create artifact registry repo (one-time)
+gcloud artifacts repositories create mtcars-repo \
+  --repository-format=docker \
+  --location=us-central1
+
+# build for linux/amd64 (required for Cloud Run, especially on Apple Silicon)
+podman build --platform linux/amd64 \
+  -t us-central1-docker.pkg.dev/mtcars-fastapi-zach/mtcars-repo/mtcars-fastapi-api:latest .
+
+# push image
+podman push us-central1-docker.pkg.dev/mtcars-fastapi-zach/mtcars-repo/mtcars-fastapi-api:latest
 
 # deploy
-gcloud run deploy mtcars-fastapi \
-  --image gcr.io/YOUR_PROJECT_ID/mtcars-fastapi:latest \
+gcloud run deploy mtcars-fastapi-api \
+  --image us-central1-docker.pkg.dev/mtcars-fastapi-zach/mtcars-repo/mtcars-fastapi-api:latest \
   --platform managed \
   --region us-central1 \
-  --allow-unauthenticated \
-  --port 8080
+  --port 8080 \
+  --allow-unauthenticated
 ```
 
-**Deployed API URL:** _Add your Cloud Run URL here after deployment_
+**Deployed API URL:** https://mtcars-fastapi-api-886054929408.us-central1.run.app
 
 ## Tests
 
